@@ -9,7 +9,7 @@
     :root{--font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;--border-radius-md:8px;--border-radius-lg:12px;--color-background-primary:#ffffff;--color-background-secondary:#f5f5f5;--color-background-success:#eaf6ea;--color-background-warning:#fff8e6;--color-background-info:#e6f1fb;--color-text-primary:#1a1a1a;--color-text-secondary:#555555;--color-text-tertiary:#999999;--color-text-success:#2d7a2d;--color-text-warning:#b06800;--color-text-info:#185FA5;--color-border-primary:#cccccc;--color-border-secondary:#d0d0d0;--color-border-tertiary:#e8e8e8;--color-border-success:#7ec87e;--color-border-warning:#f0c060;}
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:var(--font-sans);background:var(--color-background-secondary);min-height:100vh;}
-    #root{max-width:700px;margin:0 auto;padding:12px 12px 40px;}
+    #root{max-width:700px;margin:0 auto;padding:12px 12px 80px;}
     button{font-family:inherit;}
     input[type=search]{outline:none;}
     input[type=search]::-webkit-search-cancel-button{cursor:pointer;}
@@ -2935,7 +2935,7 @@ function BadgeCard({
       fontSize: 10,
       color: 'var(--color-text-tertiary)'
     }
-  }, done ? '✓ Fullført' : inProg ? `${(prog.badges?.[m.id]?.krav || []).filter(Boolean).length}/${m.krav.length} krav` : `${m.krav.length} krav`)), /*#__PURE__*/React.createElement(InstallBanner, null));
+  }, done ? '✓ Fullført' : inProg ? `${(prog.badges?.[m.id]?.krav || []).filter(Boolean).length}/${m.krav.length} krav` : `${m.krav.length} krav`)));
 }
 
 // ─── BADGE DETAIL ─────────────────────────────────────────────────────────────
@@ -3238,7 +3238,7 @@ function ProgramTab({
         className: "ti ti-check",
         style: {
           fontSize: 13,
-          color: 'var(--color-text-success)'
+          color: "var(--color-text-success)"
         }
       }), /*#__PURE__*/React.createElement("button", {
         onClick: () => onViewMerker(kode),
@@ -3413,13 +3413,13 @@ function MerkerTab({
     className: "ti ti-search",
     "aria-hidden": true,
     style: {
-      position: 'absolute',
+      position: "absolute",
       left: 10,
-      top: '50%',
-      transform: 'translateY(-50%)',
+      top: "50%",
+      transform: "translateY(-50%)",
       fontSize: 13,
-      color: 'var(--color-text-tertiary)',
-      pointerEvents: 'none'
+      color: "var(--color-text-tertiary)",
+      pointerEvents: "none"
     }
   }), /*#__PURE__*/React.createElement("input", {
     type: "search",
@@ -3506,6 +3506,192 @@ function MerkerTab({
     onOpen: onOpen,
     onToggleFav: onToggleFav
   }))));
+}
+
+// ─── EKSPORT / IMPORT ─────────────────────────────────────────────────────────
+function DataModal({
+  prog,
+  onImport,
+  onClose
+}) {
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState(null); // { type: 'ok'|'err', text }
+
+  const doExport = () => {
+    const payload = {
+      versjon: 7,
+      eksportert: new Date().toISOString(),
+      navn: prog.name || '',
+      alderstrinn: prog.alderstrinn || 'stifinner',
+      badges: prog.badges || {},
+      manuelMal: prog.manuelMal || {},
+      favoritter: prog.favorites || {}
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: 'application/json'
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const navn = (prog.name || 'speider').replace(/[^a-z0-9æøå]/gi, '_').toLowerCase();
+    const dato = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `speidermerker_${navn}_${dato}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const doImport = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImporting(true);
+    setImportMsg(null);
+    const reader = new FileReader();
+    reader.onload = evt => {
+      try {
+        const d = JSON.parse(evt.target.result);
+        if (!d.badges) throw new Error('Ugyldig fil – mangler badge-data');
+        const restored = {
+          name: d.navn || d.name || '',
+          alderstrinn: d.alderstrinn || 'stifinner',
+          badges: d.badges || {},
+          manuelMal: d.manuelMal || {},
+          favorites: d.favoritter || d.favorites || {}
+        };
+        onImport(restored);
+        setImportMsg({
+          type: 'ok',
+          text: `Importert! Fremgang for ${Object.keys(restored.badges).length} merker er gjenopprettet.`
+        });
+      } catch (err) {
+        setImportMsg({
+          type: 'err',
+          text: `Feil: ${err.message}`
+        });
+      }
+      setImporting(false);
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // reset slik at samme fil kan velges igjen
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    onClick: onClose,
+    style: {
+      position: 'fixed',
+      inset: 0,
+      zIndex: 200,
+      background: 'rgba(0,0,0,0.45)',
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'center'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    onClick: e => e.stopPropagation(),
+    style: {
+      background: 'var(--color-background-primary)',
+      borderRadius: '16px 16px 0 0',
+      padding: '20px 20px max(20px,env(safe-area-inset-bottom))',
+      width: '100%',
+      maxWidth: 520,
+      boxShadow: '0 -4px 24px rgba(0,0,0,0.18)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      width: 36,
+      height: 4,
+      borderRadius: 2,
+      background: '#D0D0D0',
+      margin: '0 auto 18px'
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 16,
+      fontWeight: 600,
+      marginBottom: 4
+    }
+  }, "Eksport / Import"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: 12,
+      color: 'var(--color-text-secondary)',
+      marginBottom: 20
+    }
+  }, "Eksporter fremgangen din som en JSON-fil du kan lagre lokalt og importere igjen senere – nyttig som sikkerhetskopi eller for å flytte data mellom enheter."), /*#__PURE__*/React.createElement("button", {
+    onClick: doExport,
+    style: {
+      width: '100%',
+      padding: '13px 16px',
+      borderRadius: 10,
+      border: '1.5px solid #185FA5',
+      background: '#185FA5',
+      color: 'white',
+      fontSize: 15,
+      fontWeight: 600,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      marginBottom: 10
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 18
+    }
+  }, "⬇️"), " Eksporter fremgang"), /*#__PURE__*/React.createElement("label", {
+    style: {
+      width: '100%',
+      padding: '13px 16px',
+      borderRadius: 10,
+      border: '1.5px solid var(--color-border-secondary)',
+      background: 'var(--color-background-secondary)',
+      color: 'var(--color-text-primary)',
+      fontSize: 15,
+      fontWeight: 600,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8
+    }
+  }, /*#__PURE__*/React.createElement("span", {
+    style: {
+      fontSize: 18
+    }
+  }, "⬆️"), " Importer fra fil", /*#__PURE__*/React.createElement("input", {
+    type: "file",
+    accept: ".json",
+    onChange: doImport,
+    style: {
+      display: 'none'
+    }
+  })), importing && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12,
+      fontSize: 12,
+      color: 'var(--color-text-secondary)',
+      textAlign: 'center'
+    }
+  }, "Leser fil…"), importMsg && /*#__PURE__*/React.createElement("div", {
+    style: {
+      marginTop: 12,
+      fontSize: 12,
+      padding: '8px 12px',
+      borderRadius: 8,
+      background: importMsg.type === 'ok' ? 'var(--color-background-success)' : 'var(--color-background-warning)',
+      color: importMsg.type === 'ok' ? 'var(--color-text-success)' : '#b06800'
+    }
+  }, importMsg.text), /*#__PURE__*/React.createElement("button", {
+    onClick: onClose,
+    style: {
+      marginTop: 14,
+      width: '100%',
+      padding: '11px',
+      borderRadius: 10,
+      border: 'none',
+      background: 'none',
+      color: 'var(--color-text-secondary)',
+      fontSize: 14,
+      cursor: 'pointer'
+    }
+  }, "Lukk")));
 }
 
 // ─── INSTALL BANNER ───────────────────────────────────────────────────────────
@@ -3638,6 +3824,7 @@ function App() {
   const [sel, setSel] = useState(null); // badge id
   const [malFilter, setMalFilter] = useState(null);
   const [editingName, setEditingName] = useState(false);
+  const [showDataModal, setShowDataModal] = useState(false);
   const [nameInput, setNameInput] = useState("");
   useEffect(() => {
     loadData().then(d => {
@@ -3709,6 +3896,12 @@ function App() {
       }
     }));
   }, []);
+  const handleImport = useCallback(restored => {
+    setProg(p => ({
+      ...p,
+      ...restored
+    }));
+  }, []);
   const viewMerkerForMal = useCallback(kode => {
     setMalFilter(kode);
     setTab("merker");
@@ -3726,7 +3919,7 @@ function App() {
     className: "ti ti-loader",
     style: {
       fontSize: 24,
-      display: 'block',
+      display: "block",
       marginBottom: 8
     },
     "aria-hidden": true
@@ -3778,7 +3971,7 @@ function App() {
     "aria-hidden": true,
     style: {
       fontSize: 16,
-      color: '#185FA5'
+      color: "#185FA5"
     }
   }), editingName ? /*#__PURE__*/React.createElement("input", {
     autoFocus: true,
@@ -3826,7 +4019,7 @@ function App() {
     "aria-hidden": true,
     style: {
       fontSize: 13,
-      color: 'var(--color-text-tertiary)'
+      color: "var(--color-text-tertiary)"
     }
   }))), /*#__PURE__*/React.createElement("div", {
     style: {
@@ -3868,31 +4061,13 @@ function App() {
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setTab("merker"),
     style: tabBtn("merker")
-  }, /*#__PURE__*/React.createElement("i", {
-    className: "ti ti-list",
-    style: {
-      fontSize: 12
-    },
-    "aria-hidden": true
-  }), "Merker"), /*#__PURE__*/React.createElement("button", {
+  }, "Merker"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setTab("program"),
     style: tabBtn("program")
-  }, /*#__PURE__*/React.createElement("i", {
-    className: "ti ti-chart-radar",
-    style: {
-      fontSize: 12
-    },
-    "aria-hidden": true
-  }), "Programmål"), /*#__PURE__*/React.createElement("button", {
+  }, "Programmål"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setTab("anbefal"),
     style: tabBtn("anbefal")
-  }, /*#__PURE__*/React.createElement("i", {
-    className: "ti ti-sparkles",
-    style: {
-      fontSize: 12
-    },
-    "aria-hidden": true
-  }), "Anbefalinger")), sel ? /*#__PURE__*/React.createElement(BadgeDetail, {
+  }, "Anbefalinger")), sel ? /*#__PURE__*/React.createElement(BadgeDetail, {
     id: sel,
     alderstrinn: alderstrinn,
     prog: prog,
@@ -3929,11 +4104,40 @@ function App() {
       flexWrap: 'wrap',
       gap: 4
     }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      gap: 10,
+      alignItems: 'center'
+    }
   }, /*#__PURE__*/React.createElement("span", {
     style: {
       color: 'var(--color-text-tertiary)'
     }
-  }, "speiding.no/speiderbasen"), /*#__PURE__*/React.createElement("button", {
+  }, "speiding.no/speiderbasen"), /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: 'var(--color-border-secondary)'
+    }
+  }, "·"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setShowDataModal(true),
+    style: {
+      fontSize: 11,
+      background: 'none',
+      border: 'none',
+      color: 'var(--color-text-tertiary)',
+      cursor: 'pointer',
+      padding: 0,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 3
+    }
+  }, /*#__PURE__*/React.createElement("i", {
+    className: "ti ti-database-export",
+    "aria-hidden": true,
+    style: {
+      fontSize: 11
+    }
+  }), "Eksport / Import")), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       if (confirm('Nullstill all fremgang? Dette kan ikke angres.')) setProg(p => ({
         ...p,
@@ -3957,7 +4161,11 @@ function App() {
       fontSize: 11,
       marginRight: 2
     }
-  }), "Nullstill fremgang")));
+  }), "Nullstill fremgang")), /*#__PURE__*/React.createElement(InstallBanner, null), showDataModal && /*#__PURE__*/React.createElement(DataModal, {
+    prog: prog,
+    onImport: handleImport,
+    onClose: () => setShowDataModal(false)
+  }));
 }
 const _c = document.getElementById("root");
 const _r = ReactDOM.createRoot(_c);
