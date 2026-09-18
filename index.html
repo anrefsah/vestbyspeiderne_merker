@@ -2675,27 +2675,42 @@ const MERKER = [{
 const OMRADER = {
   "F": {
     "navn": "Friluftsliv",
-    "kravFor": 8,
+    "kravFor": {
+      "stifinner": 8,
+      "vandrer": 9
+    },
     "mal": [["F-1", "Klare deg selv på tur"], ["F-2", "Orientering"], ["F-3", "Overnatting"], ["F-4", "Mat på tur"], ["F-5", "Bål og åpen ild"], ["F-6", "Friluftslivets verdier"], ["F-7", "Ferdsel i natur"], ["F-8", "Skjønnhet i naturen"], ["F-9", "Ikke-motoriserte fremkomstmidler"], ["F-10", "Turplanlegging"], ["F-11", "Forebygging av skader"], ["F-12", "Førstehjelp"], ["F-13", "Turutstyr"]]
   },
   "S": {
     "navn": "Samfunnsengasjement",
-    "kravFor": 8,
+    "kravFor": {
+      "stifinner": 8,
+      "vandrer": 9
+    },
     "mal": [["S-1", "Demokratiske verdier"], ["S-2", "Kritisk tenking"], ["S-3", "Ansvar i speidersammenheng"], ["S-4", "Ansvar i samfunnet"], ["S-5", "Politiske beslutninger"], ["S-6", "Naturkunnskap"], ["S-7", "Mennesket og naturen"], ["S-8", "Redusere forbruk"], ["S-9", "Produktvalg"], ["S-10", "Bærekraftig naturbruk"], ["S-11", "Samfunnsstrukturer"], ["S-12", "Likheter og forskjeller"], ["S-13", "Ulike kulturer"], ["S-14", "Samfunnsproblemer"]]
   },
   "V": {
     "navn": "Vennskap",
-    "kravFor": 8,
+    "kravFor": {
+      "stifinner": 8,
+      "vandrer": 9
+    },
     "mal": [["V-1", "Samarbeidsevner"], ["V-2", "Tillit"], ["V-3", "Fysisk og psykisk utfordring"], ["V-4", "Kommunikasjon"], ["V-5", "Respekt for grenser"], ["V-6", "Konfliktløsning"], ["V-7", "Empati og solidaritet"], ["V-8", "Fellesskap"], ["V-9", "Samhold i enheten"], ["V-10", "Speider fra annen gruppe"], ["V-11", "Speiding i andre land"], ["V-12", "Likeverd"]]
   },
   "K": {
     "navn": "Kreativitet",
-    "kravFor": 10,
+    "kravFor": {
+      "stifinner": 10,
+      "vandrer": 11
+    },
     "mal": [["K-1", "Sanser og motorikk"], ["K-2", "Hukommelse"], ["K-3", "Observasjon"], ["K-4", "Logisk tenking"], ["K-5", "Teknologisk utstyr"], ["K-6", "Teknologisk utvikling"], ["K-7", "Arbeidstegninger"], ["K-8", "Redskaper"], ["K-9", "Naturmaterialer"], ["K-10", "Tau og knuter"], ["K-11", "Tegn og symboler"], ["K-12", "Vitenskapelige eksperimenter"], ["K-13", "Fantasi og improvisasjon"], ["K-14", "Musikalitet"], ["K-15", "Teater og mime"]]
   },
   "L": {
     "navn": "Livskvalitet",
-    "kravFor": 7,
+    "kravFor": {
+      "stifinner": 7,
+      "vandrer": 8
+    },
     "mal": [["L-1", "Speidingens verdigrunnlag"], ["L-2", "Verdier og holdninger"], ["L-3", "Styrker og utvikling"], ["L-4", "Livssyn"], ["L-5", "Spre glede"], ["L-6", "Verdiformidling"], ["L-7", "Trossamfunn"], ["L-8", "Funksjonsutfordringer"], ["L-9", "Avhengighet"], ["L-10", "Kosthold og helse"], ["L-11", "Selvfølelse"], ["L-12", "Hygiene og smitte"]]
   }
 };
@@ -2780,7 +2795,7 @@ function Pentagon({
   const oids = Object.keys(OMRADER);
   const vals = oids.map(o => {
     const cnt = getOmradeCount(o, prog, alderstrinn);
-    return Math.min(cnt / OMRADER[o].kravFor, 1);
+    return Math.min(cnt / OMRADER[o].kravFor[alderstrinn], 1);
   });
   const cx = 60,
     cy = 60,
@@ -3158,7 +3173,8 @@ function ProgramTab({
 }) {
   return /*#__PURE__*/React.createElement("div", null, Object.entries(OMRADER).map(([oid, od]) => {
     const done_cnt = getOmradeCount(oid, prog, alderstrinn);
-    const ok = done_cnt >= od.kravFor;
+    const need = od.kravFor[alderstrinn];
+    const ok = done_cnt >= need;
     const col = {
       F: '#185FA5',
       S: '#3B6D11',
@@ -3193,7 +3209,7 @@ function ProgramTab({
         fontSize: 12,
         color: ok ? 'var(--color-text-success)' : 'var(--color-text-secondary)'
       }
-    }, ok ? '✓ ' : '', done_cnt, "/", od.kravFor, " mål")), /*#__PURE__*/React.createElement("div", {
+    }, ok ? '✓ ' : '', done_cnt, "/", need, " mål")), /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         flexDirection: 'column',
