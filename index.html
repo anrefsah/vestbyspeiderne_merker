@@ -2768,7 +2768,8 @@ function isFav(m, prog) {
   return !!prog.favorites?.[m.id];
 }
 function getOmradeCount(omradeId, prog, alderstrinn) {
-  return MERKER.filter(m => m.alderstrinn === alderstrinn && m.omrader.includes(omradeId) && isBadgeDone(m, prog)).length;
+  // Teller antall MAAL (ikke merker) som er dekket av fullførte merker eller manuell markering
+  return OMRADER[omradeId].mal.filter(([kode]) => MERKER.some(m => m.alderstrinn === alderstrinn && m.mal.includes(kode) && isBadgeDone(m, prog)) || !!prog.manuelMal?.[kode]).length;
 }
 
 // ─── PENTAGON ─────────────────────────────────────────────────────────────────
